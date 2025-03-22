@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1065132615436",
+    "project_id": "jitsisample-88bc2",
+    "storage_bucket": "jitsisample-88bc2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1065132615436:android:855a458f67b0cf60278b29",
+        "android_client_info": {
+          "package_name": "jitsi.com.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4wt16tB3bzh9fwpAV3VBtx2Dtf6C-SMQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

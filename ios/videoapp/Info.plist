@@ -26,14 +26,26 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-	  <!-- Do not change NSAllowsArbitraryLoads to true, or you will risk app rejection! -->
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCallingUsageDescription</key>
+	<string>Allow $(PRODUCT_NAME) to make and manage phone calls</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is required for video conferencing</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access is required for video conferencing</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>voip</string>
+		<string>fetch</string>
+		<string>audio</string>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
