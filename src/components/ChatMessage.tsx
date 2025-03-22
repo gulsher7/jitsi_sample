@@ -10,10 +10,13 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  useWindowDimensions
+  useWindowDimensions,
+  Alert
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { JitsiMeeting } from '@jitsi/react-native-sdk';
+import RNCallKeep from 'react-native-callkeep';
+
 
 interface ChatMessageParams {
   userId: string;
@@ -33,6 +36,7 @@ const ChatMessage = () => {
   const [isInCall, setIsInCall] = useState(false);
   const [callType, setCallType] = useState<'audio' | 'video' | null>(null);
   const [room, setRoom] = useState('');
+  const [callUUID, setCallUUID] = useState('');
   
   const route = useRoute();
   const navigation = useNavigation();
@@ -66,25 +70,73 @@ const ChatMessage = () => {
   };
 
   const startCall = (type: 'audio' | 'video') => {
-    setCallType(type);
-    setIsInCall(true);
-    
-    // Generate a unique room name
-    const roomName = `chat-${userId}-${Date.now()}`;
-    setRoom(roomName);
+    try {
+      // Generate a unique ID for the call
+      const newCallUUID = "sdfsdfsdfsdfdsf"
+      setCallUUID(newCallUUID);
+      
+      // Generate a unique room name
+      const roomName = `chat-${userId}-${Date.now()}`;
+      setRoom(roomName);
+      setCallType(type);
+      
+      // Start outgoing call with CallKeep
+      RNCallKeep.startCall(newCallUUID, name, name, 'generic', type === 'video');
+      
+      // Store call data
+      global.currentCall = {
+        callUUID: newCallUUID,
+        roomName,
+        callerId: 'me',
+        callerName: name,
+        isVideoCall: type === 'video'
+      };
+      
+      // Set call active
+      setTimeout(() => {
+        RNCallKeep.setCurrentCallActive(newCallUUID);
+        setIsInCall(true);
+      }, 1000);
+      
+      // Listen for call termination
+      const endCallListener = RNCallKeep.addEventListener('endCall', ({ callUUID }) => {
+        if (callUUID === newCallUUID) {
+          setIsInCall(false);
+          RNCallKeep.removeEventListener('endCall', endCallListener);
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error starting call:', error);
+      Alert.alert('Call Error', 'Failed to start call. Falling back to direct join.');
+      
+      // Fallback to direct join if CallKeep fails
+      setCallType(type);
+      setIsInCall(true);
+      const roomName = `chat-${userId}-${Date.now()}`;
+      setRoom(roomName);
+    }
   };
 
   const onReadyToClose = useCallback(() => {
     setIsInCall(false);
+    if (callUUID) {
+      RNCallKeep.endCall(callUUID);
+      setCallUUID('');
+    }
     if (jitsiMeetingRef.current) {
       // @ts-ignore
       jitsiMeetingRef.current.close();
     }
-  }, []);
+  }, [callUUID]);
 
   const onConferenceTerminated = useCallback(() => {
     setIsInCall(false);
-  }, []);
+    if (callUUID) {
+      RNCallKeep.endCall(callUUID);
+      setCallUUID('');
+    }
+  }, [callUUID]);
 
   const eventListeners = {
     onReadyToClose,

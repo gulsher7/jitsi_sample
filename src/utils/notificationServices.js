@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import messaging from "@react-native-firebase/messaging";
 import { Alert, PermissionsAndroid, Platform } from "react-native";
+import { handleTestCall } from "./callingHandle";
 
 /**
  * Requests the necessary user permissions for receiving notifications.
@@ -61,11 +62,28 @@ const getFCMToken = async () => {
 export async function notificationListeners() {
   const unsubscribe = messaging().onMessage(async (remoteMessage) => {
 
+
+    if (!!remoteMessage?.data) {
+      console.log("Notification received in foreground:", remoteMessage.notification);
+
+      // Check if it's a call notification
+
+      handleTestCall(remoteMessage.notification, remoteMessage.data);
+    }
   });
 
   messaging().onNotificationOpenedApp((remoteMessage) => {
- 
+
+    // if (remoteMessage.notification) {
+    //   console.log("Notification caused app to open from background state:", remoteMessage.notification);
+
+    //   // Check if it's a call notification
+    //   if (remoteMessage.data && remoteMessage.data.type === 'call') {
+    //     handleTestCall(remoteMessage.notification, remoteMessage.data);
+    //   }
+    // } 
   });
+
   messaging()
     .getInitialNotification()
     .then((remoteMessage) => {
@@ -74,6 +92,7 @@ export async function notificationListeners() {
           "Notification caused app to open from quit state:",
           remoteMessage.notification
         );
+
       }
     });
 

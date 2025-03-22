@@ -1,16 +1,36 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect, useRef } from 'react';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import Home from './components/Home';
 import Meeting from './components/Meeting';
 import ChatList from './components/ChatList';
 import ChatMessage from './components/ChatMessage';
-
+import { setNavigationRef } from './utils/callingHandle';
+import { requestUserPermission } from './utils/notificationServices';
+import RNCallKeep from 'react-native-callkeep';
 const RootStack = createStackNavigator();
 
-const Routes = () => (
-    <NavigationContainer>
-      <RootStack.Navigator initialRouteName="ChatList">
+
+// Define global type for TypeScript
+declare global {
+  var currentCall: {
+    callUUID: string;
+    roomName: string;
+    callerId: string;
+    callerName: string;
+  } | null;
+}
+
+const Routes = () => {
+  const navigationRef = useRef<NavigationContainerRef<any>>(null);
+
+  
+
+  return (
+    <NavigationContainer
+    ref={navigationRef}
+    >
+      <RootStack.Navigator initialRouteName="Home">
         <RootStack.Screen
           component={Home}
           name="Home"
@@ -41,6 +61,7 @@ const Routes = () => (
         />
       </RootStack.Navigator>
     </NavigationContainer>
-);
+  );
+};
 
 export default Routes;

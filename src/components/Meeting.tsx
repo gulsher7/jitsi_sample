@@ -1,43 +1,51 @@
-import React, { useCallback, useRef } from 'react';
-
-import { JitsiMeeting } from '@jitsi/react-native-sdk';
-
-import { useNavigation } from '@react-navigation/native';
-import { Platform } from 'react-native';
-
-
-const userInfoAndroid = {
-  displayName: 'John Doe',
-  email: 'john.doe@example.com',
-  avatarUrl: 'https://example.com/avatar.png',
-  userInfo: {
-    displayName: 'John Doe',
-    email: 'john.doe@example.com',
-    avatarUrl: 'https://example.com/avatar.png',
-  }
-}
-
-const userInfoIOS = {
-  displayName: 'Gulsher',
-  email: 'gulsher@gmail.com',
-  avatarUrl: 'https://example.com/avatar.png',
-  userInfo: {
-    displayName: 'Gulsher',
-    email: 'gulsher@gmail.com',
-    avatarUrl: 'https://example.com/avatar.png',
-  }
-}
+import React, {useCallback, useRef, useState, useEffect} from 'react';
+import {View, Text, ActivityIndicator, StyleSheet, Alert, Platform, Button} from 'react-native';
+import {JitsiMeeting} from '@jitsi/react-native-sdk';
+import {useNavigation} from '@react-navigation/native';
 
 
 interface MeetingProps {
-  route: any;
+  route: {
+    params: {
+      room?: string;
+      url?: string;
+      subject?: string;
+      audioOnly?: boolean;
+    };
+  };
 }
 
-const Meeting = ({ route }: MeetingProps) => {
+const Meeting = ( { route }: MeetingProps ) => {
   const jitsiMeeting = useRef(null);
   const navigation = useNavigation();
 
-  const { room } = route.params;
+  // Extract parameters from route
+  // Support both direct room name and URL format from CallKeep
+  const { room, url, subject, audioOnly } = route.params;
+  
+  // State to track loading
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Hide loading indicator after a timeout
+  useEffect(() => {
+    // Hide loading indicator after 10 seconds, even if conference join event is not triggered
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 10000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Clean up the room name to ensure it's valid
+  // If URL is provided (from CallKeep), extract the room name from it
+  // Ensure we always have a valid room name
+  const meetingRoom = (url ? url.split('/').pop() : room) || 'default-room';
+  
+  // Sanitize the room name to remove any special characters
+  const sanitizedRoom = meetingRoom.replace(/[^a-zA-Z0-9-_]/g, '');
+  
+  // For demo purposes, we'll use a hardcoded room name if none is provided
+  const demoRoom = 'demo-room-123';
 
   const onReadyToClose = useCallback(() => {
     // @ts-ignore
@@ -47,60 +55,97 @@ const Meeting = ({ route }: MeetingProps) => {
   }, [navigation]);
 
   const onEndpointMessageReceived = useCallback(() => {
-    console.log('You got a message!');
+      console.log('You got a message!');
   }, []);
+
+  const onConferenceJoined = useCallback(() => {
+    console.log('Conference joined successfully');
+    setIsLoading(false);
+  }, []);
+  
+  const onConferenceTerminated = useCallback(() => {
+    console.log('Conference terminated');
+    // @ts-ignore
+    navigation.navigate('Home');
+  }, [navigation]);
 
   const eventListeners = {
     onReadyToClose,
-    onEndpointMessageReceived
+    onEndpointMessageReceived,
+    onConferenceJoined,
+    onConferenceTerminated
   };
 
   return (
-    // @ts-ignore
-    <JitsiMeeting
-
-      userInfo={{
-        avatarURL: Platform.OS === 'android' ? userInfoAndroid.avatarUrl : userInfoIOS  .avatarUrl,
-        displayName: Platform.OS === 'android' ? userInfoAndroid.displayName : userInfoIOS.displayName,
-        email: Platform.OS === 'android' ? userInfoAndroid.email : userInfoIOS.email,
-      }}
-
-      config={{
-        hideConferenceTimer: true,
-        customToolbarButtons: [
-          {
-            icon: "https://w7.pngwing.com/pngs/987/537/png-transparent-download-downloading-save-basic-user-interface-icon-thumbnail.png",
-            id: "btn1",
-            text: "Button one"
-          }, {
-            icon: "https://w7.pngwing.com/pngs/987/537/png-transparent-download-downloading-save-basic-user-interface-icon-thumbnail.png",
-            id: "btn2",
-            text: "Button two"
-          }
-        ],
-        whiteboard: {
-          enabled: true,
-          collabServerBaseUrl: "https://meet.jit.si/",
-        },
-      }}
-      eventListeners={eventListeners as any}
-      flags={{
-        "audioMute.enabled": true,
-        "ios.screensharing.enabled": true,
-        "fullscreen.enabled": false,
-        "audioOnly.enabled": false,
-        "android.screensharing.enabled": true,
-        "pip.enabled": true,
-        "pip-while-screen-sharing.enabled": true,
-        "conference-timer.enabled": true,
-        "close-captions.enabled": false,
-        "toolbox.enabled": true,
-      }}
-      ref={jitsiMeeting}
-      style={{ flex: 1 }}
-      room={room}
-      serverURL={"https://alpha.jitsi.net"} />
+    <View style={{ flex: 1 }}>
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0000ff" />
+          <Text style={styles.loadingText}>Connecting to meeting...</Text>
+        </View>
+      )}
+      
+      {/* @ts-ignore */}
+      <JitsiMeeting
+        userInfo={{
+          displayName: 'Test User',
+          email: 'test@example.com',
+          avatarURL: 'https://avatars.githubusercontent.com/u/3171503'
+        }}
+        config={{
+          startWithAudioMuted: false,
+          startWithVideoMuted: false,
+          subject: subject || `Meeting: ${sanitizedRoom}`
+        }}
+        eventListeners={eventListeners as any}
+        ref={jitsiMeeting}
+        style={{ flex: 1 }}
+        room={sanitizedRoom}
+        serverURL={"https://alpha.jitsi.net"} />
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    zIndex: 1,
+  },
+  loadingText: {
+    marginTop: 20,
+    fontSize: 16,
+    color: '#333',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  errorText: {
+    fontSize: 18,
+    color: 'red',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  infoText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  buttonContainer: {
+    marginTop: 20,
+    width: '80%',
+  }
+});
 
 export default Meeting;
