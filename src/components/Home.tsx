@@ -1,20 +1,22 @@
-import React, {useState} from 'react';
-import {Button, TextInput, View, Alert} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import React, { useState } from 'react';
+import { Button, TextInput, View, Alert, Platform } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import RNCallKeep from 'react-native-callkeep';
 
 const Home = () => {
     const navigation = useNavigation();
     const [room, onChangeRoom] = useState('');
-    
+
     const handleTestCall = async () => {
         try {
             // Generate a unique UUID for the call
-            const callUUID = "1234567890"
+            const callUUID = Platform.OS === 'ios'
+                ? '11111116-2226-3336-4446-555555555556' // Proper UUID format for iOS
+                : "1234567890"; // S
             const callerName = 'Test Caller';
             const callerId = 'test-caller-id';
             const roomName = room || 'test-room';
-            
+
             // Display incoming call UI
             RNCallKeep.displayIncomingCall(
                 callUUID,
@@ -23,7 +25,7 @@ const Home = () => {
                 'generic',
                 false
             );
-            
+
             // Store call data in global object for when call is answered
             global.currentCall = {
                 callUUID,
@@ -31,7 +33,7 @@ const Home = () => {
                 callerId,
                 callerName
             };
-            
+
             Alert.alert('Test Call', 'Simulating an incoming call...');
         } catch (error) {
             console.error('Error displaying incoming call:', error);
@@ -49,7 +51,7 @@ const Home = () => {
                 // @ts-ignore
                 onChangeText={onChangeRoom}
                 placeholder="Enter room name here"
-                style={{color: 'black', padding: 32}}
+                style={{ color: 'black', padding: 32 }}
                 value={room} />
             <Button
                 color="blue"
@@ -57,9 +59,9 @@ const Home = () => {
                 // @ts-ignore
                 onPress={() => navigation.navigate('Meeting', { room })}
                 // @ts-ignore
-                style={{height: 32, width: 32}}
+                style={{ height: 32, width: 32 }}
                 title="Join" />
-                
+
             <View style={{ marginTop: 20 }}>
                 <Button
                     color="green"

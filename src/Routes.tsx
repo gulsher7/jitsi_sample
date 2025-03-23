@@ -24,13 +24,21 @@ declare global {
 const Routes = () => {
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
 
-  
+
 
   return (
     <NavigationContainer
-    ref={navigationRef}
+      ref={navigationRef}
     >
-      <RootStack.Navigator initialRouteName="Home">
+      <RootStack.Navigator initialRouteName="ChatList">
+
+      <RootStack.Screen
+          component={ChatList}
+          name="ChatList"
+          options={{
+            headerShown: false,
+          }}
+        />
         <RootStack.Screen
           component={Home}
           name="Home"
@@ -45,13 +53,7 @@ const Routes = () => {
             headerShown: false,
           }}
         />
-        <RootStack.Screen
-          component={ChatList}
-          name="ChatList"
-          options={{
-            headerShown: false,
-          }}
-        />
+      
         <RootStack.Screen
           component={ChatMessage}
           name="ChatMessage"

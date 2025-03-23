@@ -2,6 +2,7 @@ import React, {useCallback, useRef, useState, useEffect} from 'react';
 import {View, Text, ActivityIndicator, StyleSheet, Alert, Platform, Button} from 'react-native';
 import {JitsiMeeting} from '@jitsi/react-native-sdk';
 import {useNavigation} from '@react-navigation/native';
+import RNCallKeep, { CONSTANTS } from 'react-native-callkeep';
 
 
 interface MeetingProps {
@@ -11,6 +12,7 @@ interface MeetingProps {
       url?: string;
       subject?: string;
       audioOnly?: boolean;
+      callUUID?: string;
     };
   };
 }
@@ -21,21 +23,48 @@ const Meeting = ( { route }: MeetingProps ) => {
 
   // Extract parameters from route
   // Support both direct room name and URL format from CallKeep
-  const { room, url, subject, audioOnly } = route.params;
-  
-  // State to track loading
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Hide loading indicator after a timeout
+  const { room, url, subject, audioOnly, callUUID } = route.params;
+
+
   useEffect(() => {
-    // Hide loading indicator after 10 seconds, even if conference join event is not triggered
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 10000);
+    // Extract parameters from route
+    const { room, url, subject, audioOnly, callUUID } = route.params;
     
-    return () => clearTimeout(timer);
+    // Handle the CallKit session if it exists
+    if (callUUID) {
+      // Add event listeners
+
+      console.log("callUUID Meeting", callUUID)
+      const endCallListener = RNCallKeep.addEventListener('didDeactivateAudioSession', () => {
+        console.log('Audio session deactivated');
+        // Clean up call resources here
+      });
+      
+      // Set a timer to end the CallKit call after the UI is ready
+      const timer = setTimeout(() => {
+        if (Platform.OS === 'ios') {
+          // For iOS, use the specific reason
+          RNCallKeep.reportEndCallWithUUID(
+            callUUID, 
+            CONSTANTS.END_CALL_REASONS.ANSWERED_ELSEWHERE
+          );
+        } else {
+          // For Android, simply end the call
+          RNCallKeep.endCall(callUUID);
+        }
+      }, 1500);
+      
+      // Clean up
+      return () => {
+        clearTimeout(timer);
+        endCallListener.remove();
+      };
+    }
   }, []);
   
+  // State to track loading
+  const [isLoading, setIsLoading] = useState(false);
+ 
   // Clean up the room name to ensure it's valid
   // If URL is provided (from CallKeep), extract the room name from it
   // Ensure we always have a valid room name
@@ -43,9 +72,7 @@ const Meeting = ( { route }: MeetingProps ) => {
   
   // Sanitize the room name to remove any special characters
   const sanitizedRoom = meetingRoom.replace(/[^a-zA-Z0-9-_]/g, '');
-  
-  // For demo purposes, we'll use a hardcoded room name if none is provided
-  const demoRoom = 'demo-room-123';
+
 
   const onReadyToClose = useCallback(() => {
     // @ts-ignore
@@ -59,8 +86,7 @@ const Meeting = ( { route }: MeetingProps ) => {
   }, []);
 
   const onConferenceJoined = useCallback(() => {
-    console.log('Conference joined successfully');
-    setIsLoading(false);
+
   }, []);
   
   const onConferenceTerminated = useCallback(() => {
@@ -78,12 +104,7 @@ const Meeting = ( { route }: MeetingProps ) => {
 
   return (
     <View style={{ flex: 1 }}>
-      {isLoading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
-          <Text style={styles.loadingText}>Connecting to meeting...</Text>
-        </View>
-      )}
+  
       
       {/* @ts-ignore */}
       <JitsiMeeting

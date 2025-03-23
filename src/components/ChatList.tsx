@@ -16,9 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 const chatUsers = [
   { id: '1', name: 'John Doe', lastMessage: 'Hey, how are you?', time: '10:30 AM', avatar: 'https://randomuser.me/api/portraits/men/1.jpg' },
   { id: '2', name: 'Jane Smith', lastMessage: 'Meeting at 2 PM', time: '9:45 AM', avatar: 'https://randomuser.me/api/portraits/women/2.jpg' },
-  { id: '3', name: 'Mike Johnson', lastMessage: 'Please check the document', time: 'Yesterday', avatar: 'https://randomuser.me/api/portraits/men/3.jpg' },
-  { id: '4', name: 'Emily Davis', lastMessage: 'Thanks for your help!', time: 'Yesterday', avatar: 'https://randomuser.me/api/portraits/women/4.jpg' },
-  { id: '5', name: 'Alex Wilson', lastMessage: 'See you tomorrow', time: '2 days ago', avatar: 'https://randomuser.me/api/portraits/men/5.jpg' },
+
 ];
 
 const ChatList = () => {

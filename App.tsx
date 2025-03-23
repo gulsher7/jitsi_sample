@@ -9,7 +9,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Home from './src/components/Home';
 import Meeting from './src/components/Meeting';
 import { requestUserPermission } from './src/utils/notificationServices';
-
+import ChatList from './src/components/ChatList';
+import ChatMessage from './src/components/ChatMessage';
 // Define global type for TypeScript
 declare global {
   var currentCall: {
@@ -26,13 +27,8 @@ const App = () => {
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
 
 
-  console.log("App", global.currentCall)
-
-
   useEffect(() => {
     // Configure CallKeep
-    requestUserPermission();
-
 
     const options = {
       ios: {
@@ -57,6 +53,11 @@ const App = () => {
     // Setup CallKeep
     RNCallKeep.setup(options);
 
+    if (Platform.OS === "android") {
+      RNCallKeep.setAvailable(true);
+    }
+
+
     // Handle call actions
     RNCallKeep.addEventListener('answerCall', ({ callUUID }) => {
       // Delay app activation to allow background-to-foreground transition
@@ -73,7 +74,13 @@ const App = () => {
           });
         }
 
-        RNCallKeep.endCall(callUUID);
+        if (Platform.OS === 'android') {
+          RNCallKeep.backToForeground();
+        }
+
+        setTimeout(() => {
+          RNCallKeep.endCall(callUUID);
+        }, 2000);
       }
 
     });
@@ -83,16 +90,37 @@ const App = () => {
       console.log('Call ended or rejected', callUUID);
     });
 
+
+    requestUserPermission();
+
     return () => {
       // Clean up event listeners
       RNCallKeep.removeEventListener('answerCall');
       RNCallKeep.removeEventListener('endCall');
-    };
+    }; 
   }, []);
 
   return (
     <NavigationContainer ref={navigationRef}>
       <RootStack.Navigator initialRouteName="Home">
+
+        <RootStack.Screen
+          component={ChatList}
+          name="ChatList"
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        <RootStack.Screen
+          component={ChatMessage}
+          name="ChatMessage"
+          options={{
+            headerShown: false,
+          }}
+        />
+
+
         <RootStack.Screen
           component={Home}
           name="Home"

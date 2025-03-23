@@ -37,14 +37,14 @@ const ChatMessage = () => {
   const [callType, setCallType] = useState<'audio' | 'video' | null>(null);
   const [room, setRoom] = useState('');
   const [callUUID, setCallUUID] = useState('');
-  
+
   const route = useRoute();
   const navigation = useNavigation();
   const params = route.params as ChatMessageParams || { userId: '', name: '', avatar: '' };
   const { userId, name, avatar } = params;
   const { width, height } = useWindowDimensions();
   const isTablet = Platform.OS === 'ios' && Math.min(width, height) >= 768;
-  
+
   const flatListRef = useRef<FlatList>(null);
   const jitsiMeetingRef = useRef(null);
 
@@ -57,14 +57,14 @@ const ChatMessage = () => {
 
   const onSend = () => {
     if (inputText.trim() === '') return;
-    
+
     const newMessage = {
       id: Date.now().toString(),
       text: inputText.trim(),
       sender: 'me',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
-    
+
     setMessages([...messages, newMessage]);
     setInputText('');
   };
@@ -74,15 +74,15 @@ const ChatMessage = () => {
       // Generate a unique ID for the call
       const newCallUUID = "sdfsdfsdfsdfdsf"
       setCallUUID(newCallUUID);
-      
+
       // Generate a unique room name
       const roomName = `chat-${userId}-${Date.now()}`;
       setRoom(roomName);
       setCallType(type);
-      
+
       // Start outgoing call with CallKeep
       RNCallKeep.startCall(newCallUUID, name, name, 'generic', type === 'video');
-      
+
       // Store call data
       global.currentCall = {
         callUUID: newCallUUID,
@@ -91,13 +91,13 @@ const ChatMessage = () => {
         callerName: name,
         isVideoCall: type === 'video'
       };
-      
+
       // Set call active
       setTimeout(() => {
         RNCallKeep.setCurrentCallActive(newCallUUID);
         setIsInCall(true);
       }, 1000);
-      
+
       // Listen for call termination
       const endCallListener = RNCallKeep.addEventListener('endCall', ({ callUUID }) => {
         if (callUUID === newCallUUID) {
@@ -105,11 +105,11 @@ const ChatMessage = () => {
           RNCallKeep.removeEventListener('endCall', endCallListener);
         }
       });
-      
+
     } catch (error) {
       console.error('Error starting call:', error);
       Alert.alert('Call Error', 'Failed to start call. Falling back to direct join.');
-      
+
       // Fallback to direct join if CallKeep fails
       setCallType(type);
       setIsInCall(true);
@@ -220,14 +220,14 @@ const ChatMessage = () => {
         <Image source={{ uri: avatar }} style={styles.headerAvatar} />
         <Text style={styles.headerName}>{name}</Text>
         <View style={styles.callButtons}>
-          <TouchableOpacity 
-            style={[styles.callButton, { backgroundColor: '#4CAF50' }]} 
+          <TouchableOpacity
+            style={[styles.callButton, { backgroundColor: '#4CAF50' }]}
             onPress={() => startCall('audio')}
           >
             <Text style={styles.callButtonText}>Audio</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.callButton, { backgroundColor: '#2196F3' }]} 
+          <TouchableOpacity
+            style={[styles.callButton, { backgroundColor: '#2196F3' }]}
             onPress={() => startCall('video')}
           >
             <Text style={styles.callButtonText}>Video</Text>

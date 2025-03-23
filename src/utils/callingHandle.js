@@ -12,7 +12,7 @@ export const setNavigationRef = (ref) => {
 
 // Initialize CallKeep
 export const setupCallKeep = () => {
-  alert("setupCallKeep")
+
   const options = {
     ios: {
       appName: 'VideoApp',
@@ -27,7 +27,7 @@ export const setupCallKeep = () => {
       okButton: 'OK',
       additionalPermissions: [],
       foregroundService: {
-        channelId: 'com.videoapp',
+        channelId: 'jitsi.com.app',
         channelName: 'Foreground service for video calls',
         notificationTitle: 'Video call is active',
       }
@@ -37,14 +37,14 @@ export const setupCallKeep = () => {
   try {
     RNCallKeep.setup(options);
     RNCallKeep.setAvailable(true);
-    
+
     // Set event handlers
     RNCallKeep.addEventListener('answerCall', onAnswerCall);
     RNCallKeep.addEventListener('endCall', onEndCall);
     RNCallKeep.addEventListener('didPerformDTMFAction', onDTMFAction);
     RNCallKeep.addEventListener('didReceiveStartCallAction', onStartCallAction);
     RNCallKeep.addEventListener('didDisplayIncomingCall', onIncomingCallDisplayed);
-    
+
     console.log('CallKeep initialized successfully');
   } catch (err) {
     console.error('Error setting up CallKeep', err);
@@ -64,7 +64,7 @@ export const handleTestCall = async (notification, data) => {
     const callerId = data?.callerId || 'unknown';
     const roomName = data?.roomName || `room-${callUUID}`;
     const isVideoCall = data?.isVideoCall === 'true' || false;
-    
+
     // Store call data in global object for when call is answered
     global.currentCall = {
       callUUID,
@@ -73,7 +73,7 @@ export const handleTestCall = async (notification, data) => {
       callerName,
       isVideoCall
     };
-    
+
     // Display incoming call UI via CallKeep
     if (Platform.OS === 'android') {
       // For Android, we need to check if device supports CallKeep
@@ -94,20 +94,19 @@ export const handleTestCall = async (notification, data) => {
         isVideoCall
       );
     }
-    
+
     // console.log('Incoming call displayed:', { callUUID, callerName, callerId, roomName });
   } catch (error) {
     console.error('Error displaying incoming call:', error);
     Alert.alert('Call Error', 'Failed to display incoming call');
-    
+
     // If CallKeep fails, we can fall back to direct navigation
-    navigateToMeeting(data?.roomName || `room-${Date.now()}`, data?.isVideoCall === 'true');
+    navigateToMeeting(data?.roomName || `room-${Date.now()}`, data?.isVideoCall === 'true', "callUUID");
   }
 };
 
 // Handle when user answers the call
 const onAnswerCall = ({ callUUID }) => {
-  alert("onAnswerCall")
   console.log('Call answered:', callUUID);
   
   // Get call data from global object
@@ -117,22 +116,27 @@ const onAnswerCall = ({ callUUID }) => {
     return;
   }
   
-  // Navigate to the meeting screen
-  navigateToMeeting(callData.roomName, callData.isVideoCall);
-  
-  // Update call status
+  // Mark call as active
   RNCallKeep.setCurrentCallActive(callUUID);
+  
+  if (Platform.OS === 'ios') {
+    // For iOS, report the call as connected
+    RNCallKeep.reportConnectedOutgoingCallWithUUID(callUUID);
+  }
+  
+  // Navigate to meeting screen
+  navigateToMeeting(callData.roomName, callData.isVideoCall, callUUID);
 };
 
 // Handle when call ends
 const onEndCall = ({ callUUID }) => {
   console.log('Call ended:', callUUID);
-  
+
   // If we're in a meeting, go back to home
   if (navigationRef && navigationRef.getCurrentRoute().name === 'Meeting') {
     navigationRef.navigate('Home');
   }
-  
+
   // Clean up global call data
   if (global.currentCall && global.currentCall.callUUID === callUUID) {
     global.currentCall = null;
@@ -140,21 +144,26 @@ const onEndCall = ({ callUUID }) => {
 };
 
 // Navigate to the meeting screen
-const navigateToMeeting = (room, isVideoCall) => {
+const navigateToMeeting = (room, isVideoCall, callUUID) => {
   if (!navigationRef) {
     console.warn('Navigation ref not set, cannot navigate to meeting');
     return;
   }
 
-  alert("navigateToMeeting")
+  // Use backToForeground for Android
+  if (Platform.OS === 'android') {
+    RNCallKeep.backToForeground();
+  }
   
+  // Navigate to the Meeting screen with callUUID
   navigationRef.dispatch(
     CommonActions.navigate({
       name: 'Meeting',
       params: {
         room,
         subject: `Call with ${global.currentCall?.callerName || 'User'}`,
-        audioOnly: !isVideoCall
+        audioOnly: !isVideoCall,
+        callUUID  // Pass the callUUID to the Meeting component
       },
     })
   );
